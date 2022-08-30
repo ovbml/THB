@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Текст - Шестнадцатеричный код - Бинарный код</title>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400&family=Space+Mono&display=swap');
+
+        * {
+            font-family: sans-serif;
+
+            /* nullstyle  */
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            font-size: 16px;
+        }
+
+        main {
+            padding: 15px 20px;
+        }
+
+        .container {
+            max-width:  1000px;
+            margin: 0 auto;
+        }
+
+        .inputs {
+            display: grid;
+            grid-template-rows: repeat(auto-fill, min-content);
+            grid-template-columns: minmax(50px, 130px) 1fr;
+            align-items: start;
+            grid-gap: 15px;
+        }
+
+        label {
+            padding: 3px 0;
+            letter-spacing: 2px;
+            font-family: Kanit, sans-serif;
+            font-weight: 300;
+            /*word-break: break-word;*/
+            hyphens: auto;
+        }
+
+        p {
+            letter-spacing: 1px;
+        }
+        #help {
+            margin-top: 20px;
+        }
+
+        textarea {
+            resize: none;
+            outline: none;
+            border: none;
+            font-family: 'Space Mono', monospace;
+            font-size: 1rem;
+            color: rgba(0, 0, 0, .7);
+            box-sizing: border-box;
+            position: relative;
+            width: 100%;
+            max-height: 1000px;
+        }
+        textarea:focus {
+            border-color: rgba(21, 21, 21, 1);
+            color:  rgba(0, 0, 0, 1);
+        }
+
+        #textarea {
+            position: absolute;
+            visibility: hidden;
+            font-size: 1rem;
+            left: -1000px;
+            top: -1000px;
+            white-space: pre-wrap;
+            word-break: break-word;
+            box-sizing: border-box;
+
+            font-family: 'Space Mono', monospace;
+        }
+
+        .textarea-block {
+            border-left: 1px solid rgba(21, 21, 21, 1);
+            padding: 8px 8px 8px 15px;
+        }
+
+        .copy,
+        .paste {
+            display: inline-block;
+            font-size: 13px;
+            color: rgba(90, 90, 90, .7);
+            font-weight: bold;
+            font-family: sans-serif;
+            margin-top: 5px;
+            cursor: pointer;
+        }
+        .copy:hover,
+        .paste:hover {
+            color: rgba(90, 90, 90, 1);
+            text-decoration: underline;
+        }
+        .copy {
+            margin-right:;
+            padding-right: 10px;
+            position: relative;
+        }
+        .copy::after {
+            content:  '•';
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        #help,
+        #error {
+            line-height: 1.5;
+            font-family: Kanit, sans-serif;
+        }
+
+        @font-face {
+            font-family: Hack;
+            font-weight: 400;
+            src: url('Hack-Regular.ttf');
+        }
+    </style>
+</head>
+<body>
+    <main class='container'>
+        <div id="textarea">Как ты видишь это? O_O Уупс... Косяк...</div>
+
+        <div class="inputs">
+            <label>Текст:</label>
+            <div class="textarea-block">
+                <textarea id="text" placeholder="Введи сюда текст" rows="1">Привет мир!</textarea>
+                <p class="copy">Скопировать</p>
+                <p class="paste">Вставить</p>
+            </div>
+
+            <label>Шест&shy;над&shy;ца&shy;те&shy;рич&shy;ный код:</label>
+            <div class="textarea-block">
+                <textarea id="hex" placeholder="Введи шестнадцатеричный код сюда" rows="1"></textarea>
+                <p class="copy">Скопировать</p>
+                <p class="paste">Вставить</p>
+            </div>
+
+            <label>Бинарный код:</label>
+            <div class="textarea-block">
+                <textarea id="bin" placeholder="Введи бинарный код сюда" rows="1"></textarea>
+                <p class="copy">Скопировать</p>
+                <p class="paste">Вставить</p>
+            </div>
+
+            <label>Разделитель:</label>
+            <div class="textarea-block">
+                <textarea id="sep" placeholder="Введи разделитель сюда" rows="1">[пробел]</textarea>
+                <p class="copy">Скопировать</p>
+                <p class="paste">Вставить</p>
+            </div>
+        </div>
+
+        <p id="help">Кликни/Нажми на текст, чтобы выделить его весь. Кликни/Нажми ещё ра, чтобы установить курсор мыши в указанную точку и редактировать текст или нажми BackSpace, чтобы очистить поле. Когда ты вводишь любые данные в поле, другие поля автоматически пересчитываются  в реальном времени. Если ты хочешь использовать функции копирования и вставки, тебе надо предоставить соответстующие разрешения, когда сайт попросит об этом.<p>
+        <p id="error">Если ты видишь этот текс, значит твой браузер не поддерживает TextEncoder and TextDecoder JavaScrupt Интерфейсы. Но если ты также видишь другие элементы на этой странице -&#62; у тебя в принципе отключен JavaScript. Пожалуйста, открой этот сайт в другом браузере либо включи JavaScript в настройках браузера.</p>
+    </main>
+
+    <script>
+        function chunk(string, length) {
+            const pattern = new RegExp(`.{1,${length}}`, 'ig');
+            return string.match(pattern);
+        }
+
+
+        class Text {
+            constructor() {}
+
+            fromHex(code, sep = ' ') {
+                if ( code.length == 0 )
+                    return '';
+
+                // get dec nums
+                const decoder = new TextDecoder(); let dec_nums = [];
+
+                // split code on parts with one number
+                let hex_nums = chunk(code.replaceAll(sep, ''), 2);
+
+                for ( let hex_num of hex_nums )
+                    dec_nums.push(parseInt(hex_num, 16));
+
+                return decoder.decode(new Uint8Array(dec_nums));
+            }
+
+            fromBin(bcode, sep = ' ') {
+                if ( bcode.length == 0 )
+                    return '';
+
+                let code = (new Hex()).fromBin(bcode, sep);
+                return (new Text()).fromHex(code, sep);
+            }
+        }
+
+
+        class Hex {
+            constructor() {}
+
+            fromText(text, sep = ' ') {
+                if ( text.length == 0 )
+                    return '';
+
+                // get dec nums
+                const encoder = new TextEncoder();
+                const dec_nums = encoder.encode(text);
+
+                let code = '';
+
+                for ( let dec_num of dec_nums )
+                    code += dec_num.toString(16).padStart(2, '0');
+
+                // pretty
+                return this.pretty(code, sep);
+            }
+
+            fromBin(bcode, sep = ' ') {
+                if ( bcode.length == 0 )
+                    return '';
+
+                // split bcode on paths with one byte
+                let bin_nums = chunk(bcode.replaceAll(sep, ''), 8);
+
+                let code = '';
+
+                for ( let bin_num of bin_nums )
+                    code += parseInt(bin_num, 2).toString(16).padStart(2, '0');
+
+                return this.pretty(code, sep);
+            }
+
+            pretty(code, sep = ' ') {
+                code = code.replaceAll(sep, '');
+                return chunk(code, 4).join(sep);
+            }
+        }
+
+
+        class Bin {
+            constructor() {}
+
+            fromText(text, sep = ' ') {
+                if ( text.length == 0 )
+                    return '';
+
+                // get dec nums
+                const encoder = new TextEncoder();
+                const dec_nums = encoder.encode(text);
+
+                let code = '';
+
+                for ( let dec_num of dec_nums )
+                    code += dec_num.toString(2).padStart(8, '0');
+
+                // pretty
+                return this.pretty(code, sep);
+            }
+
+            fromHex(code, sep = ' ') {
+                if ( code.length == 0 )
+                    return '';
+
+                // split bcode on parts with one number
+                let hex_nums = chunk(code.replaceAll(sep, ''), 2);
+
+                let bcode = '';
+
+                for ( let hex_num of hex_nums )
+                    bcode += parseInt(hex_num, 16).toString(2).padStart(8, '0');
+
+                return this.pretty(bcode, sep);
+            }
+
+            pretty(bcode, sep = ' ') {
+                bcode = bcode.replaceAll(sep, '');
+                return chunk(bcode, 8).join(sep);
+            }
+        }
+
+        function execCopy(element, area) {
+            console.warn('Using document.execCommand for copying.');
+
+            area.select();
+            document.execCommand('copy');
+
+            showMessage(element, 'Скопировано!');
+        }
+
+        function copy(element, area) {
+            if ( navigator.clipboard )
+                navigator.permissions.query({ name: 'clipboard-write' })
+                    .then(result => {
+                        if ( ['granted', 'prompt'].includes(result.state) ) {
+                            navigator.clipboard.writeText(area.value)
+                                .then(() => {
+                                    showMessage(element, 'Скопировано!');
+                                })
+                                .catch(error => {
+                                    console.warn(`Failed to write in clipboard: ${error}. ` +
+                                        'Running document.execCommand.');
+                                    execCopy(element, area);
+                                });
+                        } else {
+                            console.warn('Failed to write in clipboard: permission is denied. ' +
+                                + 'Running document.execCommand.');
+                            execCopy(element, area);
+                        }
+                    })
+                    .catch(error => {
+                        console.warn(`Failed to query permission "clipboard-write": ${error}. ` +
+                            'Running document.execCommand.');
+                        execCopy(element, area);
+                    });
+            else {
+                console.warn('navigator.clipboard is not supported!');
+                execCopy(element, area);
+            }
+        }
+
+        function showMessage(element, text, delay = 1000) {
+            const startText = element.innerText;
+            element.innerText = text;
+
+            setTimeout(() => element.innerText = startText, delay);
+        }
+
+        function paste(element, area) {
+            if ( navigator.clipboard )
+                navigator.permissions.query({ name: 'clipboard-read' })
+                    .then(result => {
+                        if ( ['granted', 'prompt'].includes(result.state) ) {
+                            navigator.clipboard.readText()
+                                .then(text => {
+                                    area.value = text;
+                                    area.oninput();
+                                })
+                                .catch(error => {
+                                    console.error('Failed to read clipboard contents:', error);
+                                    showMessage(element, 'Невозможно вставить текст из-за ошибки.');
+                                });
+                        } else {
+                            console.error('Failed to read clipboard: permission is denied.');
+                            showMessage(element, 'Невозможно вставить текст: отсутствуют разрешения.');
+                        }
+
+                    })
+                    .catch(error => {
+                        console.error('Failed to query permission "clipboard-read":', error);
+                        showMessage(element, 'Невозможно вставить текст из-за ошибки.');
+                    });
+        }
+
+        function getSep() {
+            return sep.value.replaceAll('[пробел]', ' ');
+        }
+
+        function getTextareaHeight(area) {
+            const areaWidth = Math.max(area.offsetWidth, area.scrollWidth, area.clientWidth);
+            textarea.style.width = areaWidth + 'px';
+
+            let text = '';
+            area.value.replace(/[<>]/g, '_').split('\n').forEach((item, index, array) => {
+                if ( item.length === 0 )
+                    text += '\n';
+                else
+                    text += item + '\n';
+            });
+
+            textarea.innerText = text;
+
+            return textarea.offsetHeight;
+        }
+
+        function calcAllTextareasHeights() {
+            for ( let area of [text, hex, bin, sep] )
+                area.style.height = getTextareaHeight(area) + 'px';
+        }
+
+        const text_coder = new Text();
+        const hex_coder = new Hex();
+        const bin_coder = new Bin();
+
+        // DOM elements
+        const text = document.getElementById('text');
+        const hex = document.getElementById('hex');
+        const bin = document.getElementById('bin');
+        const sep = document.getElementById('sep');
+
+        const help = document.getElementById('help');
+        const error = document.getElementById('error');
+
+        const textarea = document.getElementById('textarea');
+
+        let ignoreDoubleFocus = null;
+
+        text.onclick = function() {
+            if ( ignoreDoubleFocus !== 'text' ) 
+                document.execCommand('selectAll');
+            ignoreDoubleFocus = 'text';
+        };
+        text.oninput = function() {
+            hex.value = hex_coder.fromText(this.value, getSep());
+            bin.value = bin_coder.fromText(this.value, getSep());
+
+            calcAllTextareasHeights();
+        };
+
+        hex.onclick = function() {
+            if ( ignoreDoubleFocus !== 'hex' )
+                document.execCommand('selectAll');
+            ignoreDoubleFocus = 'hex';
+        };
+        hex.oninput = function() {
+            text.value = text_coder.fromHex(this.value, getSep());
+            bin.value = bin_coder.fromHex(this.value, getSep());
+
+            calcAllTextareasHeights();
+        };
+
+        bin.onclick = function() {
+            if ( ignoreDoubleFocus !== 'bin' )
+                document.execCommand('selectAll');
+            ignoreDoubleFocus = 'bin';
+        };
+        bin.oninput = function() {
+            text.value = text_coder.fromBin(this.value, getSep());
+            hex.value = hex_coder.fromBin(this.value, getSep());
+
+            calcAllTextareasHeights();
+        };
+
+        sep.oninput = function() {
+            text.oninput();
+        };
+
+        for ( let element of document.querySelectorAll('.copy') )
+            element.onclick = function() {
+                let area = this.parentElement.querySelector('textarea');
+                copy(this, area);
+            };
+
+        for ( let element of document.querySelectorAll('.paste') )
+            element.onclick = function() {
+                let area = this.parentElement.querySelector('textarea');
+                paste(this, area);
+            };
+
+        document.body.onload = function() {
+            if ( TextEncoder && TextDecoder )
+                error.style.display = 'none';
+            else {
+                document.getElementsByClassName('inputs')[0].style.display = 'none';
+                help.style.display = 'none';
+            }
+
+            text.oninput();
+        }
+    </script>
+</body>
+</html>
